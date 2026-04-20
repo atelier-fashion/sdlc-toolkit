@@ -98,7 +98,7 @@ None. No backend services.
 | `templates/requirement-template.md` | Extend frontmatter | TASK-001 |
 | `templates/bug-template.md` | Extend frontmatter | TASK-002 |
 | `templates/lesson-template.md` | Extend frontmatter | TASK-003 |
-| `spec/SKILL.md` | Add Step 0.5; replace Step 1.3; extend Step 3 | TASK-004 |
+| `spec/SKILL.md` | Add Step 1.5 (Query Derivation); add Step 1.6 (Unified Retrieval, replacing the old 3-tier grep); extend Step 3 (deployable field, citations, self-tagging, Retrieved Context section) | TASK-004 |
 | `init/SKILL.md` | Add taxonomy.md scaffolding step | TASK-005 |
 | `templates/taxonomy-template.md` | New file (canonical stub) | TASK-005 |
 | (verification pass — no file change) | Dogfood `/spec` on synthetic REQ | TASK-006 |

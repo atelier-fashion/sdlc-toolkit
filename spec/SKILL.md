@@ -6,7 +6,7 @@ argument-hint: Feature description or request
 
 # /spec — Requirement Specification
 
-You are writing a requirement spec for the Atelier Fashion project following the spec-driven ADLC process.
+You are writing a requirement spec following the spec-driven ADLC process.
 
 ## Ethos
 
@@ -16,7 +16,7 @@ You are writing a requirement spec for the Atelier Fashion project following the
 
 - ADLC context: !`cat .adlc/context/project-overview.md 2>/dev/null || echo "No project overview found"`
 - Requirement template: !`cat .adlc/templates/requirement-template.md 2>/dev/null || cat ~/.claude/skills/templates/requirement-template.md 2>/dev/null || echo "No requirement template found"`
-- Active specs: !`grep -rl 'status: draft\|status: approved\|status: in-progress' .adlc/specs/*/requirement.md 2>/dev/null | head -20 || echo "No active specs"`
+- Taxonomy: !`cat .adlc/context/taxonomy.md 2>/dev/null || echo "No taxonomy found — consider running /init to scaffold one"`
 
 ## Input
 
@@ -63,7 +63,12 @@ Before retrieval fires, derive a structured query from the feature request. This
      tags:      [<values>]
    Confirm or edit any field before retrieval fires.
    ```
-4. **Pipeline mode** (invoked from `/proceed`): do NOT block for user input. Use the proposed tags directly. If `/proceed` passed inherited tags via invocation context, use those instead of the proposed ones.
+4. **Non-interactive / pipeline mode** — detect this when ANY of:
+   - `$ARGUMENTS` already contains explicit tag values (e.g., a caller passed `component: X` or `tags: [...]` in the prompt)
+   - The invocation prompt explicitly says "invoked from /proceed" or "pipeline mode" or supplies an inherited query object
+   - Running inside a subagent context that cannot receive further user input (e.g., dispatched via the Agent tool)
+
+   In any of these cases: do NOT block for confirmation. Use caller-supplied tag values verbatim; for any unspecified dimension, use the proposed value from sub-step 2. Proceed directly to Step 1.6.
 5. Retain the confirmed `query` object. It is reused by Step 1.6 (retrieval) and Step 3 (self-tagging the new REQ's frontmatter).
 
 ### Step 1.6: Unified Retrieval Across Corpora
@@ -77,7 +82,7 @@ Run a weighted-score retrieval over three corpora using the query from Step 1.5.
 
    If any directory is empty or missing, skip it and continue (cold-start path).
 
-2. **Read the frontmatter of every candidate** using Read with `limit: 20` (enough to cover frontmatter block). Parse these fields: `component`, `domain`, `stack`, `concerns`, `tags`, `updated`, `created`, `status`. If the frontmatter is malformed (missing `---` delimiters, unparseable YAML), skip that doc and continue — do not crash.
+2. **Read the frontmatter of every candidate** using Read with `limit: 30` (enough to cover full frontmatter block including any leading HTML comments, e.g., the lesson template's naming-convention comment). Parse these fields: `component`, `domain`, `stack`, `concerns`, `tags`, `updated`, `created`, `status`. If the frontmatter is malformed (missing `---` delimiters, unparseable YAML), skip that doc and continue — do not crash.
 
 3. **Compute a weighted score per candidate** using the following rule:
    - `+3` if `doc.component == query.component`
@@ -89,7 +94,11 @@ Run a weighted-score retrieval over three corpora using the query from Step 1.5.
 
 4. **Filter** out every doc with final score `0`.
 
-5. **Sort** descending by score. **Tiebreak**: newer `updated` wins; when `updated` is missing, fall back through `created` → file mtime → stable alphabetical by `id`. When two docs share the same date, corpus priority is `lesson > bug > spec`.
+5. **Sort** using a strict lexicographic key `(score DESC, effective_date DESC, corpus_priority ASC, id ASC)`:
+   - `effective_date` per doc is the first non-empty value in this chain: `updated` → `created` → file mtime → epoch-minimum (if all are absent)
+   - `corpus_priority` maps `lesson=0`, `bug=1`, `spec=2`
+   - Interpretation: highest score first; among equal scores, newest `effective_date` wins; among equal scores **and** equal dates, corpus priority `lesson > bug > spec` applies; final tiebreak is alphabetical `id`
+   - Missing dates never cause retrieval failures — they are treated as oldest and lose date tiebreaks
 
 6. **Take the top 15 globally** across all corpora. There are no per-corpus quotas (no minimum-lesson floor, no maximum-bug cap). If fewer than 15 candidates survive filtering, take what is available.
 
@@ -132,7 +141,7 @@ Run a weighted-score retrieval over three corpora using the query from Step 1.5.
 1. Create directory: `.adlc/specs/REQ-xxx-feature-slug/`
 2. Create `requirement.md` using the template from `.adlc/templates/requirement-template.md`
 3. Fill in all sections:
-   - **Frontmatter**: id, title, status (`draft`), created date, updated date, AND the five query tags from Step 1.5 — `component`, `domain`, `stack`, `concerns`, `tags`. This self-tagging makes the new REQ retrievable for future `/spec` invocations (per REQ-258 BR-7).
+   - **Frontmatter**: id, title, status (`draft`), `deployable` (carry the template default unless the feature is explicitly non-deployable — e.g., iOS-only or docs-only), created date, updated date, AND the five query tags from Step 1.5 — `component`, `domain`, `stack`, `concerns`, `tags`. This self-tagging makes the new REQ retrievable for future `/spec` invocations (per REQ-258 BR-7).
    - **Description**: What the feature does and why — be specific and grounded in the project context
    - **System Model**: Structured data model — Entities (fields, types, constraints), Events (triggers, payloads), Permissions (actions, roles). Remove sub-sections that don't apply to this feature.
    - **Business Rules**: Explicit, testable constraints governing behavior (e.g., "Only item owner can delete"). Numbered BR-1, BR-2, etc.
@@ -141,7 +150,7 @@ Run a weighted-score retrieval over three corpora using the query from Step 1.5.
    - **Assumptions**: Things assumed to be true that could affect the design
    - **Open Questions**: Questions that need answers before implementation
    - **Out of Scope**: Items explicitly excluded to prevent scope creep
-   - **Retrieved Context** (NEW, always present): append a `## Retrieved Context` section at the end of the spec listing every retrieved source from Step 1.6.8 in the form `ID (corpus, score): title`. If no context was retrieved (cold-start path), write exactly: `No prior context retrieved — first REQ in this area.`
+   - **Retrieved Context** (NEW, always present): append a `## Retrieved Context` section at the end of the spec listing every retrieved source from the retrieval summary produced in Step 1.6 in the form `ID (corpus, score): title`. If no context was retrieved (cold-start path — either the corpus is empty or no documents scored above zero), write exactly: `No prior context retrieved — no tagged documents matched this area.`
 4. **Inline citations**: when a retrieved doc directly informed a Business Rule, Assumption, or Acceptance Criterion, add an inline citation in the form `(informed by BUG-012)` or `(informed by REQ-019, LESSON-034)` at the end of that line. Citations are required when the retrieved doc is load-bearing for the rule; optional when the doc was background reading only.
 
 ### Step 4: Present for Review

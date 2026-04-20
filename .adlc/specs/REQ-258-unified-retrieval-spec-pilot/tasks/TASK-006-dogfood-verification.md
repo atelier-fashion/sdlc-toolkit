@@ -66,7 +66,7 @@ domain: "auth"
 component: "API/auth"
 stack: ["express"]
 concerns: ["security"]
-tags: ["token-reuse", "session"]
+tags: ["token-reuse", "session", "password-reset"]
 created: 2026-01-01
 updated: 2026-01-01
 ---
@@ -129,7 +129,7 @@ claude -p "/spec 'add password reset via email'"
 
 Expected behavior:
 1. Query tags proposed as `{component: API/auth, domain: auth, concerns: [security], tags: [password-reset, ...]}`.
-2. Scoring: LESSON-001 scores ~`3+2+2+1+1 = 9` (component+domain+concerns+stack+tag match); BUG-001 scores similarly ~`3+2+2+1+2 = 10` (extra tag match on `password-reset`); LESSON-002 and BUG-002 score 0 or near-zero (foundational floor only for LESSON-002).
+2. Scoring: LESSON-001 scores `3+2+2+1+1 = 9` (component+domain+concerns+stack+`password-reset` tag match); BUG-001 scores `3+2+2+1+2 = 10` (all the above plus an extra tag match from `rate-limiting`). LESSON-002 and BUG-002 score 0 — no component/domain/concerns/tags overlap. LESSON-002 gets no foundational floor because its tag fields ARE populated (just with non-matching values). With both mocks filtered out by BR-2, only LESSON-001 and BUG-001 appear in the retrieval summary. BUG-001 ranks above LESSON-001 (score 10 > 9), and within the same score, corpus-priority `lesson > bug` would only apply on equal scores.
 3. Retrieval summary surfaces LESSON-001 and BUG-001 with their scores.
 4. Generated REQ cites `(informed by BUG-001)` on a rate-limiting or token rule.
 

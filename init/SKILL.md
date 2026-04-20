@@ -167,6 +167,9 @@ if [ ! -f ~/.claude/skills/templates/taxonomy-template.md ]; then
   exit 1
 fi
 
+# Ensure destination directory exists (safe if Step 3 already created it)
+mkdir -p .adlc/context
+
 # Idempotent copy: only copy if destination does not already exist
 if [ ! -f .adlc/context/taxonomy.md ]; then
   cp ~/.claude/skills/templates/taxonomy-template.md .adlc/context/taxonomy.md

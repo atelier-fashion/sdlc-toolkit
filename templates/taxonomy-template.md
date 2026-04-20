@@ -1,6 +1,6 @@
 # Taxonomy — Retrieval Tag Vocabulary
 
-This project's legal values for retrieval tag dimensions. Used by `/spec`, `/architect`, `/bugfix`, and `/review` when retrieving relevant prior context via the unified tag-based retriever.
+This project's legal values for retrieval tag dimensions. Currently used by `/spec` when retrieving relevant prior context via the unified tag-based retriever. Integration into `/architect`, `/bugfix`, and `/review` is planned in follow-up REQs.
 
 **This file is project-local.** Different projects have different taxonomies. Extend it as new areas emerge. Values are advisory — the retrieval system does not currently enforce them, but consistent vocabulary improves retrieval quality.
 

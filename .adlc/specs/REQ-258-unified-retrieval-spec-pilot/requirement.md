@@ -14,7 +14,7 @@ tags: [rag, retrieval, tagging, spec-skill, atelier-pattern, frontmatter-schema]
 
 ## Description
 
-Upgrade the `/spec` skill's context-loading step from the current 3-tier binary lesson grep to a unified weighted-score retriever that ranks relevance across three corpora simultaneously: lessons, prior specs (approved / in-progress / deployed), and resolved bugs. Adopt the scoring shape used by Atelier Fashion's style RAG (`~/Documents/GitHub/atelier-fashion/api/src/services/knowledgeService.js`): weighted-sum over multi-dimensional frontmatter tags with a foundational-doc baseline.
+Upgrade the `/spec` skill's context-loading step from the current 3-tier binary lesson grep to a unified weighted-score retriever that ranks relevance across three corpora simultaneously: lessons, prior specs (approved / in-progress / deployed), and resolved bugs. Adopt the scoring shape used by Atelier Fashion's style RAG (`knowledgeService.js` in the atelier-fashion repo): weighted-sum over multi-dimensional frontmatter tags with a foundational-doc baseline.
 
 **Why this change exists.** Today the `/spec` skill retrieves lessons via a 3-tier matching rule (component exact > domain + prefix > tag). Specs and bugs are not retrievable by semantic area at all — only by ID. This leaves three gaps:
 
@@ -65,7 +65,7 @@ _The retrieval feature does not introduce user-facing entities or events. The "d
 
 | Event | Trigger | Payload |
 |-------|---------|---------|
-| `query_proposed` | `/spec` Step 0.5 — agent derives tags from feature request | query object shown to user |
+| `query_proposed` | `/spec` Step 1.5 — agent derives tags from feature request | query object shown to user |
 | `retrieval_run` | After user confirms query | scored pool + top-15 selection |
 | `retrieval_summary_shown` | Before authoring begins | Retrieved docs with scores surfaced to user |
 | `source_cited` | Agent references a retrieved doc while drafting a rule | inline citation `(informed by BUG-012)` written into spec |
@@ -89,7 +89,7 @@ _Explicit testable constraints. Each BR must be checkable against the implementa
 - [ ] BR-6: Bugs are retrievable only if `status == resolved`. Open and in-progress bugs are excluded.
 - [ ] BR-7: The generated REQ persists the query tags (`component`, `domain`, `stack`, `concerns`, `tags`) into its own frontmatter on creation. This makes the REQ itself retrievable for future `/spec` invocations (self-tagging mandate).
 - [ ] BR-8: Tiebreak policy when two docs score equal: newer `updated` date wins; if still tied, corpus priority `lesson > bug > spec`. Fallback chain when `updated` is missing or malformed on legacy docs: `updated` → `created` → file mtime → stable alphabetical by ID. Missing dates do not cause retrieval failures.
-- [ ] BR-9: On cold-start (no docs score above zero), the skill proceeds without retrieved context and writes an explicit note into the spec's `## Retrieved Context` section: `"No prior context retrieved — first REQ in this area."`
+- [ ] BR-9: On cold-start (no docs score above zero, either from empty corpus or from legacy untagged corpus), the skill proceeds without retrieved context and writes an explicit note into the spec's `## Retrieved Context` section: `"No prior context retrieved — no tagged documents matched this area."`
 - [ ] BR-10: The retrieval summary surfaced to the user before authoring lists every retrieved doc with its ID, corpus, and score. Default verbosity: always shown (no `--verbose` flag required).
 - [ ] BR-11: The generated spec includes a `## Retrieved Context` section at the end listing every retrieved source (ID + corpus + score), regardless of whether each was cited inline. This is the auditable trail.
 - [ ] BR-12: When a retrieved doc directly informs a Business Rule, Assumption, or Acceptance Criterion, the agent adds an inline citation in the form `(informed by BUG-012)` or `(informed by REQ-019, LESSON-034)`. Citations are required when the retrieved doc is load-bearing for the rule; optional when the retrieved doc was background reading only.
@@ -102,7 +102,7 @@ _Explicit testable constraints. Each BR must be checkable against the implementa
 - [ ] AC-2: The generated REQ's frontmatter includes non-empty values for `component`, `domain`, and at least one of `stack` / `concerns` / `tags` (when the feature area supports them). Verifiable via grep.
 - [ ] AC-3: The generated REQ contains a `## Retrieved Context` section enumerating every retrieved source.
 - [ ] AC-4: When a retrieved doc was load-bearing for a Business Rule, an inline citation `(informed by <ID>)` appears on that BR line.
-- [ ] AC-5: On a fresh project with empty `.adlc/knowledge/lessons/`, `.adlc/specs/`, and `.adlc/bugs/`, `/spec` produces a REQ with `## Retrieved Context` containing `"No prior context retrieved — first REQ in this area."`
+- [ ] AC-5: On a fresh project with empty `.adlc/knowledge/lessons/`, `.adlc/specs/`, and `.adlc/bugs/`, `/spec` produces a REQ with `## Retrieved Context` containing `"No prior context retrieved — no tagged documents matched this area."`
 - [ ] AC-6: Given two bug files with identical `component`, one with matching `concerns` and `tags` and one without, the retrieval summary shows the matching one ranked strictly higher (score at least 3 greater).
 - [ ] AC-7: Given a corpus where 12 bugs and 6 lessons all score above zero, the top-15 result contains bugs and lessons proportional to their scores — no per-corpus caps enforce a minimum lesson count. Verifiable by constructing a test fixture where all 15 top-scoring docs happen to be bugs and confirming the result is 15 bugs, 0 lessons.
 - [ ] AC-8: The `templates/requirement-template.md` and `templates/bug-template.md` files expose the new tag fields with inline comments explaining each dimension's purpose.
@@ -148,4 +148,4 @@ _All open questions from the initial draft have been resolved. Preserved here wi
 
 ## Retrieved Context
 
-No prior context retrieved — first REQ tracked in the adlc-toolkit repo. This REQ bootstraps the retrieval corpus for the toolkit's own development. Future REQs in `component: adlc/*` will retrieve REQ-258 automatically once the feature ships.
+No prior context retrieved — no tagged documents matched this area. This REQ bootstraps the retrieval corpus for the toolkit's own development (first REQ tracked in the adlc-toolkit repo). Future REQs in `component: adlc/*` will retrieve REQ-258 automatically once the feature ships.
