@@ -36,8 +36,7 @@ error" a user hit typing `/analyze` with transcription on.
 
 ## Expected Behavior
 
-Reading two known files — the project `ETHOS.md`, then the toolkit's — is
-provably in reach and pins nothing.
+Reading the project's vendored `ETHOS.md` is provably in reach and pins nothing.
 
 ## Actual Behavior
 
@@ -59,9 +58,13 @@ classifier would need to run.
 ## Resolution
 
 (open) The block becomes
-`` !`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || cat ~/.claude/skills/ETHOS.md` ``
-in all seventeen skills: same precedence, same REQ-416 H1 fallthrough on an empty
-project copy, no interpreter. `partials/ethos-include.sh` and its tests stay for
+`` !`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || echo "No ethos found — run /init …"` ``
+in all seventeen skills: the REQ-416 H1 fallthrough on an empty project copy
+kept, no interpreter, and no path outside the session root — a first draft kept
+`cat ~/.claude/skills/ETHOS.md` as the fallback and Teton Code's classifier
+refused it as unprovable, which is the correct answer for a file the daemon
+cannot see. `/init` vendors `.adlc/ETHOS.md` and `/template-drift` keeps it
+current, so the toolkit-copy fallback only ever served an uninitialised project. `partials/ethos-include.sh` and its tests stay for
 vendored skill copies that predate the line. `conventions.md` and
 `partials/README.md` record why a text-only partial should be `cat`'d at the
 call site. Teton Code's classifier learns `test` as a name-only verb in the same

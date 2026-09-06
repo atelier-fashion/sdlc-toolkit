@@ -10,7 +10,7 @@ You are performing a self-review of recently implemented code to catch issues be
 
 ## Ethos
 
-!`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || cat ~/.claude/skills/ETHOS.md`
+!`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || echo "No ethos found — run /init to vendor .adlc/ETHOS.md"`
 
 ## Context
 

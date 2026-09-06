@@ -22,10 +22,12 @@ stdout into the skill prompt. Skills invoke it like:
 
 Prefer this form only when the partial has to *compute* something. A partial
 that only prints a file is better written at the call site as the `test`/`cat`
-chain the ethos block uses (see conventions.md "Ethos"): a host that classifies
-what a preamble could have read treats `sh <file>` as opaque — Teton Code pins
-the session to its local tier on it (BUG-218) — while `cat <file>` is provably
-in reach. `ethos-include.sh` is kept for vendored copies that still call it.
+chain the ethos block uses (see conventions.md "Ethos"), reading the project's
+vendored copy only: a host that classifies what a preamble could have read
+treats `sh <file>` as opaque and a `~/` path as outside the session root —
+Teton Code pins the session to its local tier on either (BUG-218) — while
+`cat <in-root file>` is provably in reach. `ethos-include.sh` is kept for
+vendored copies that still call it.
 
 The consumer-project-first fallback works whether or not `/init` has been run
 in the consumer repo. This form needs **no** `[ -f ]` guard: `sh <file>` is an

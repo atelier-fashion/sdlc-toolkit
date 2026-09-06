@@ -10,7 +10,7 @@ You are a sprint orchestrator that launches multiple `/proceed` pipelines in par
 
 ## Ethos
 
-!`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || cat ~/.claude/skills/ETHOS.md`
+!`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || echo "No ethos found — run /init to vendor .adlc/ETHOS.md"`
 
 ## Context
 

@@ -32,10 +32,10 @@ Every skill begins with:
 ```markdown
 ## Ethos
 
-!`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || cat ~/.claude/skills/ETHOS.md`
+!`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || echo "No ethos found — run /init to vendor .adlc/ETHOS.md"`
 ```
 
-The line is the fallback chain itself: a **non-empty** consumer-project `ETHOS.md` wins (the `test -s` is REQ-416 H1 — an empty project copy must fall through, not swallow the ethos), and the toolkit copy is the fallback. It deliberately runs **no interpreter** (BUG-218): a host that classifies what a skill preamble could have read — Teton Code's REQ-614/619 grammar is the one that bit — treats `sh <file>` as opaque and pins the session to its local tier for every skill that carries the line, whereas `test` and `cat` on two named files are provably in reach. `partials/ethos-include.sh` still exists for consumer projects whose vendored skills predate this line; do not reintroduce it at a call site. Never hardcode the ethos body inside a skill.
+The line reads the **project's vendored copy only**: `/init` writes `.adlc/ETHOS.md` into every consumer project and `/template-drift` keeps it current, and the `test -s` is REQ-416 H1 — an empty copy must fall through to the notice, not swallow the ethos. It deliberately names **no path outside the session root and runs no interpreter** (BUG-218): a host that classifies what a skill preamble could have read — Teton Code's REQ-614/619 grammar is the one that bit — treats `sh <file>` as opaque and an out-of-root path such as `~/.claude/skills/ETHOS.md` as unprovable, and either one pins the session to its local tier for every skill that carries the line. `test`, `cat` and `echo` over an in-root file are provably in reach. `partials/ethos-include.sh` still exists for consumer projects whose vendored skills predate this line; do not reintroduce it, or a `~/` fallback, at a call site. Never hardcode the ethos body inside a skill.
 
 ## Delegation pattern (provider-agnostic)
 
