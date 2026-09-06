@@ -32,10 +32,10 @@ Every skill begins with:
 ```markdown
 ## Ethos
 
-!`sh .adlc/partials/ethos-include.sh 2>/dev/null || sh ~/.claude/skills/partials/ethos-include.sh`
+!`test -s .adlc/ETHOS.md && cat .adlc/ETHOS.md || cat ~/.claude/skills/ETHOS.md`
 ```
 
-The partial itself emits the canonical fallback chain (consumer-project ETHOS.md first, then toolkit-root, then graceful "No ethos found" message). The two-level fallback at the call site (project `partials/` first, then global `~/.claude/skills/partials/`) ensures the macro still works in consumer projects that haven't re-run `/init` after the toolkit shipped the partial. Never hardcode the ethos body inside a skill — always source the partial.
+The line is the fallback chain itself: a **non-empty** consumer-project `ETHOS.md` wins (the `test -s` is REQ-416 H1 — an empty project copy must fall through, not swallow the ethos), and the toolkit copy is the fallback. It deliberately runs **no interpreter** (BUG-218): a host that classifies what a skill preamble could have read — Teton Code's REQ-614/619 grammar is the one that bit — treats `sh <file>` as opaque and pins the session to its local tier for every skill that carries the line, whereas `test` and `cat` on two named files are provably in reach. `partials/ethos-include.sh` still exists for consumer projects whose vendored skills predate this line; do not reintroduce it at a call site. Never hardcode the ethos body inside a skill.
 
 ## Delegation pattern (provider-agnostic)
 
